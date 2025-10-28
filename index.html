@@ -2,50 +2,114 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>SAM</title>
 <meta name="theme-color" content="#0a84ff">
 <link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
+/* ===== Design Tokens ===== */
 :root{
-  --blue:#0a84ff; --green:#32d74b; --red:#ff3b30;
-  --bg:#f7f8fc; --text:#111; --card:#fff; --muted:#eef3ff
+  --blue:#0a84ff; --blue-weak:#eaf0ff;
+  --green:#23c552; --red:#ff3b30;
+  --bg:#f5f6fb; --card:#ffffff; --text:#0f1222; --muted:#eef3ff;
+  --border:#e7e9f3; --shadow:0 8px 24px rgba(15,18,34,.06);
+  --radius:14px; --pad:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#111216; --card:#16181f; --text:#eaeef8; --muted:#1e2230; --border:#242839; --blue-weak:#1a2544; --shadow:0 8px 24px rgba(0,0,0,.4) }
 }
 body.dark{
-  --bg:#121212; --text:#eee; --card:#1e1e1e; --muted:#20232b
+  --bg:#111216; --card:#16181f; --text:#eaeef8; --muted:#1e2230; --border:#242839; --blue-weak:#1a2544; --shadow:0 8px 24px rgba(0,0,0,.4)
 }
-*{box-sizing:border-box} body{font-family:-apple-system,system-ui,Roboto,sans-serif;margin:0;background:var(--bg);color:var(--text);transition:.2s}
-header{background:var(--blue);color:#fff;padding:14px;text-align:center;font-size:20px;position:sticky;top:0;z-index:3}
-nav.tabs{display:flex;gap:8px;overflow:auto;padding:10px 12px;background:var(--muted);position:sticky;top:56px;z-index:2}
-nav.tabs button{border:0;border-radius:999px;padding:10px 14px;background:#eaf0ff;color:#0a84ff;font-weight:600;white-space:nowrap}
-nav.tabs button.active{background:#0a84ff;color:#fff}
-main{padding:16px;display:grid;gap:16px}
-.card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-input,textarea{width:100%;padding:10px;margin:6px 0;border-radius:10px;border:1px solid #dcdcdc;background:#fff;color:#000}
-body.dark input,body.dark textarea{background:#333;color:#eee;border:1px solid #555}
-button{padding:10px 14px;border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:600}
-button.ghost{background:#eef3ff;color:#0a84ff} body.dark button.ghost{background:#2a2a2a;color:#9ac1ff}
-button.danger{background:var(--red)}
-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
-th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
-tr.profit{background:rgba(50,215,75,.08)} tr.loss{background:rgba(255,59,48,.08)}
-.total{background:var(--muted);padding:10px;border-radius:10px;margin-top:8px}
-.tab{display:none} .tab.active{display:block}
-.badge{background:#eef3ff;color:#0a84ff;border-radius:999px;padding:4px 8px;font-size:12px}
-body.dark .badge{background:#2a2a2a;color:#9ac1ff}
-.small{font-size:12px;opacity:.7}
+
+/* ===== Base ===== */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:ui-rounded, -apple-system, system-ui, "SF Pro Rounded", "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  transition:background .25s ease,color .25s ease;
+}
+header{
+  position:sticky; top:0; z-index:5;
+  background:linear-gradient(135deg, var(--blue), #6aa9ff);
+  color:#fff; padding:16px 20px;
+  font-size:20px; font-weight:700;
+}
+nav.tabs{
+  position:sticky; top:56px; z-index:4;
+  display:flex; gap:10px; overflow:auto; -webkit-overflow-scrolling:touch;
+  padding:10px 16px; background:var(--muted);
+  border-bottom:1px solid var(--border);
+}
+nav.tabs button{
+  border:1px solid transparent; border-radius:999px; padding:10px 14px;
+  background:var(--blue-weak); color:var(--blue); font-weight:700; letter-spacing:.2px;
+}
+nav.tabs button.active{ background:var(--blue); color:#fff; box-shadow:0 6px 20px rgba(10,132,255,.25) }
+main{ padding:16px; display:grid; gap:16px; max-width:920px; margin:0 auto }
+
+.card{
+  background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:var(--pad); box-shadow:var(--shadow);
+}
+h3{ margin:.2rem 0 10px; font-size:18px }
+
+input,textarea{
+  width:100%; padding:12px 12px; margin:6px 0;
+  border-radius:12px; border:1px solid var(--border); background:#fff; color:#111;
+  outline:none; transition:box-shadow .15s,border-color .15s,background .3s,color .3s;
+}
+body.dark input, body.dark textarea{ background:#1b1e27; color:var(--text); border-color:#2a2f44 }
+input:focus, textarea:focus{ box-shadow:0 0 0 4px rgba(10,132,255,.16); border-color:#7fb3ff }
+
+button{
+  padding:12px 16px; border:0; border-radius:12px; cursor:pointer;
+  background:var(--blue); color:#fff; font-weight:700; letter-spacing:.2px;
+  transition:transform .05s ease, filter .2s ease;
+}
+button:active{ transform:translateY(1px) }
+button.ghost{ background:var(--blue-weak); color:var(--blue) }
+button.danger{ background:var(--red) }
+button.pill{ border-radius:999px }
+.actions{ display:flex; gap:8px; flex-wrap:wrap }
+
+/* Tables */
+table{ width:100%; border-collapse:collapse; font-size:14px; border-radius:12px; overflow:hidden }
+th,td{ padding:10px 10px; border-bottom:1px solid var(--border); vertical-align:top }
+thead th{ position:sticky; top:0; background:var(--muted); z-index:1 }
+tbody tr:nth-child(even){ background:rgba(0,0,0,.02) }
+.num{ text-align:right; font-variant-numeric:tabular-nums }
+.kar{ display:inline-block; padding:3px 8px; border-radius:999px; font-weight:700 }
+.row-profit{ background:rgba(35,197,82,.06) }
+.row-loss{ background:rgba(255,59,48,.06) }
+.kar.profit{ background:rgba(35,197,82,.15); color:#0a7a2f }
+.kar.loss{ background:rgba(255,59,48,.15); color:#b10e00 }
+
+.total{
+  background:var(--muted); padding:12px; border-radius:12px; display:flex; gap:10px; flex-wrap:wrap
+}
+.chip{ background:#fff; border:1px solid var(--border); padding:6px 10px; border-radius:999px; box-shadow:var(--shadow) }
+body.dark .chip{ background:#171a22 }
+
+/* Small helpers */
+.small{ font-size:12px; opacity:.7 }
+.hr{ height:1px; background:var(--border); margin:12px 0 }
+
+.badge{ background:var(--blue-weak); color:var(--blue); padding:2px 8px; border-radius:999px; font-size:12px; font-weight:700 }
 </style>
 </head>
 <body>
-<header>🚛 SAM — Tır Takip (Sekmeli)</header>
+<header>🚛 SAM — Tır Takip (V6 görünüm)</header>
 
 <nav class="tabs">
-  <button data-tab="add" class="active">Kayıt Ekle</button>
-  <button data-tab="list">Kayıtlar</button>
-  <button data-tab="reports">Raporlar</button>
-  <button data-tab="service">Bakım</button>
-  <button data-tab="settings">Ayarlar</button>
+  <button data-tab="add" class="active pill">Kayıt Ekle</button>
+  <button data-tab="list" class="pill">Kayıtlar</button>
+  <button data-tab="reports" class="pill">Raporlar</button>
+  <button data-tab="service" class="pill">Bakım</button>
+  <button data-tab="settings" class="pill">Ayarlar</button>
 </nav>
 
 <main>
@@ -56,24 +120,28 @@ body.dark .badge{background:#2a2a2a;color:#9ac1ff}
       <input id="date" type="date">
       <input id="plate" list="plateList" placeholder="Plaka (örn: 34ABC123)">
       <datalist id="plateList"></datalist>
-      <input id="income" type="number" inputmode="decimal" placeholder="Gelir (₺)">
-      <input id="expense" type="number" inputmode="decimal" placeholder="Gider (₺)">
+      <div class="actions">
+        <input id="income" type="number" inputmode="decimal" placeholder="Gelir (₺)" style="flex:1">
+        <input id="expense" type="number" inputmode="decimal" placeholder="Gider (₺)" style="flex:1">
+      </div>
       <textarea id="note" placeholder="Açıklama (opsiyonel)"></textarea>
-      <input id="service" type="date" placeholder="Muayene/Bakım Tarihi (ops.)">
-      <button id="btnAdd">Kaydet</button>
+      <div class="actions">
+        <input id="service" type="date" placeholder="Muayene/Bakım Tarihi (ops.)" style="flex:1">
+        <button id="btnAdd" class="pill" style="flex:1">➕ Kaydet</button>
+      </div>
+      <div class="small">Zorunlu alanlar: Tarih, Plaka</div>
     </div>
-    <p class="small">Zorunlu alanlar: Tarih, Plaka</p>
   </section>
 
   <!-- KAYITLAR -->
   <section class="tab" id="tab-list">
     <div class="card">
       <h3>Filtre & Dışa Aktar</h3>
-      <input id="qPlate" placeholder="Plaka ara">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
-        <button class="ghost" id="btnFilter">Filtrele</button>
-        <button class="ghost" id="btnClear">Temizle</button>
-        <button class="ghost" id="btnCsv">CSV Dışa Aktar</button>
+      <div class="actions">
+        <input id="qPlate" placeholder="Plaka ara" style="flex:2">
+        <button class="ghost pill" id="btnFilter">🔎 Filtrele</button>
+        <button class="ghost pill" id="btnClear">🧹 Temizle</button>
+        <button class="ghost pill" id="btnCsv">⬇️ CSV</button>
       </div>
       <div class="total" id="summary"></div>
     </div>
@@ -81,7 +149,9 @@ body.dark .badge{background:#2a2a2a;color:#9ac1ff}
     <div class="card">
       <h3>Kayıtlar</h3>
       <table id="table">
-        <thead><tr><th>Tarih</th><th>Plaka</th><th>Gelir</th><th>Gider</th><th>Kâr</th><th>Not</th><th></th></tr></thead>
+        <thead>
+          <tr><th>Tarih</th><th>Plaka</th><th class="num">Gelir</th><th class="num">Gider</th><th class="num">Kâr</th><th>Not</th><th></th></tr>
+        </thead>
         <tbody></tbody>
       </table>
     </div>
@@ -91,22 +161,20 @@ body.dark .badge{background:#2a2a2a;color:#9ac1ff}
   <section class="tab" id="tab-reports">
     <div class="card">
       <h3>Aylık Rapor</h3>
-      <canvas id="chart" height="280"></canvas>
+      <canvas id="chart" height="300"></canvas>
     </div>
   </section>
 
   <!-- BAKIM -->
   <section class="tab" id="tab-service">
     <div class="card">
-      <h3>Bakımlar / Muayeneler</h3>
-      <p>“Kayıt Ekle” sekmesinde girilen <b>Muayene/Bakım Tarihi</b> olan kayıtlar burada listelenir.</p>
+      <h3>Bakımlar / Muayeneler <span class="badge">30 gün uyarı</span></h3>
       <table id="tblSvc">
         <thead><tr><th>Tarih</th><th>Plaka</th><th>Tip</th><th>Aksiyon</th></tr></thead>
         <tbody></tbody>
       </table>
-      <div style="margin-top:8px">
-        <button class="ghost" id="btnAllIcs">Tüm bakımları .ics indir</button>
-      </div>
+      <div class="hr"></div>
+      <button class="ghost pill" id="btnAllIcs">📅 Tüm bakımları .ics indir</button>
     </div>
   </section>
 
@@ -114,15 +182,17 @@ body.dark .badge{background:#2a2a2a;color:#9ac1ff}
   <section class="tab" id="tab-settings">
     <div class="card">
       <h3>Görünüm</h3>
-      <button id="btnDark">🌙 Karanlık Mod</button>
+      <div class="actions">
+        <button id="btnDark" class="pill">🌙 Karanlık Mod</button>
+      </div>
       <p class="small">Tema tercihin ve son seçtiğin sekme cihazında saklanır.</p>
     </div>
   </section>
 </main>
 
 <script>
-/* ====== Ana durum ====== */
-const LS = "samDataV5";
+/* ====== Ana durum / sabitler (JS mantığı aynı, görsel sınıflar güncellendi) ====== */
+const LS = "samDataV6";
 const LSLIST = "samLists";
 const LSTAB = "samTab";
 const LSTHEME = "samTheme";
@@ -136,7 +206,7 @@ function save(){ localStorage.setItem(LS, JSON.stringify(state.data)); }
 function saveLists(){ localStorage.setItem(LSLIST, JSON.stringify(state.lists)); }
 function money(n){ return (n||0).toLocaleString("tr-TR"); }
 
-/* ====== Sekmeler ====== */
+/* Sekmeler */
 const tabs = document.querySelectorAll("nav.tabs button");
 const sections = {
   add: document.getElementById("tab-add"),
@@ -149,16 +219,15 @@ function openTab(name){
   tabs.forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
   Object.entries(sections).forEach(([k,el])=> el.classList.toggle("active", k===name));
   localStorage.setItem(LSTAB, name);
-  // rapor sekmesine geçince grafiği tazele
   if(name==="reports") drawChart();
   if(name==="service") renderSvc();
 }
 tabs.forEach(b=> b.addEventListener("click", ()=> openTab(b.dataset.tab)));
 openTab(localStorage.getItem(LSTAB) || "add");
 
-/* ====== Tema ====== */
+/* Tema */
 function applyTheme(){
-  const dark = localStorage.getItem(LSTHEME)==="dark";
+  const dark = localStorage.getItem(LSTHEME)==="dark" || (localStorage.getItem(LSTHEME)===null && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.body.classList.toggle("dark", dark);
 }
 applyTheme();
@@ -168,14 +237,14 @@ document.getElementById("btnDark").addEventListener("click", ()=>{
   localStorage.setItem(LSTHEME, dark ? "dark" : "light");
 });
 
-/* ====== Otomatik tamamlama (plaka) ====== */
+/* Otomatik tamamlama (plaka) */
 function fillLists(){
   const dl = document.getElementById("plateList");
   dl.innerHTML = (state.lists.plates||[]).map(p=>`<option value="${p}">`).join("");
 }
 fillLists();
 
-/* ====== Kayıt ekle ====== */
+/* Elemanlar */
 const el = {
   date: document.getElementById("date"),
   plate: document.getElementById("plate"),
@@ -195,6 +264,7 @@ const el = {
   btnAllIcs: document.getElementById("btnAllIcs"),
 };
 
+/* Kayıt ekle */
 function addRecord(){
   const r = {
     id: Date.now(),
@@ -211,15 +281,13 @@ function addRecord(){
   if(r.plate && !state.lists.plates.includes(r.plate)) state.lists.plates.push(r.plate);
   save(); saveLists(); fillLists();
 
-  // formu temizle
   el.date.value = el.plate.value = el.income.value = el.expense.value = el.note.value = el.service.value = "";
-  openTab("list"); // ekledikten sonra listeye geç
-  renderTable();
-  drawChart();
+  openTab("list");
+  renderTable(); drawChart(); renderSvc();
 }
 document.getElementById("btnAdd").addEventListener("click", addRecord);
 
-/* ====== Liste / filtre / csv ====== */
+/* Liste / filtre / CSV */
 function renderTable(){
   el.tblBody.innerHTML = "";
   let list = [...state.data];
@@ -232,15 +300,15 @@ function renderTable(){
     const k=(r.income||0)-(r.expense||0);
     sumIn+=(r.income||0); sumEx+=(r.expense||0);
     const tr=document.createElement("tr");
-    tr.className = k>=0 ? "profit" : "loss";
+    tr.className = k>=0 ? "row-profit" : "row-loss";
     tr.innerHTML = `
       <td>${r.date||""}</td>
       <td>${r.plate||""}</td>
-      <td>${money(r.income)} ₺</td>
-      <td>${money(r.expense)} ₺</td>
-      <td>${money(k)} ₺</td>
+      <td class="num">${money(r.income)} ₺</td>
+      <td class="num">${money(r.expense)} ₺</td>
+      <td class="num"><span class="kar ${k>=0?'profit':'loss'}">${money(k)} ₺</span></td>
       <td>${(r.note||"").replace(/</g,"&lt;")}</td>
-      <td><button class="danger" data-id="${r.id}">Sil</button></td>`;
+      <td><button class="danger pill" data-id="${r.id}">Sil</button></td>`;
     tr.querySelector("button").addEventListener("click",(e)=>{
       const id = e.currentTarget.getAttribute("data-id");
       if(confirm("Bu kayıt silinsin mi?")){
@@ -251,7 +319,11 @@ function renderTable(){
     el.tblBody.appendChild(tr);
   });
 
-  el.summary.innerHTML = `Toplam Gelir: <b>${money(sumIn)} ₺</b> — Gider: <b>${money(sumEx)} ₺</b> — Kâr: <b>${money(sumIn-sumEx)} ₺</b> — Kayıt: <b>${list.length}</b>`;
+  el.summary.innerHTML = `
+    <span class="chip">Gelir: <b>${money(sumIn)} ₺</b></span>
+    <span class="chip">Gider: <b>${money(sumEx)} ₺</b></span>
+    <span class="chip">Kâr: <b>${money(sumIn-sumEx)} ₺</b></span>
+    <span class="chip">Kayıt: <b>${list.length}</b></span>`;
 }
 function exportCsv(){
   const rows = ["Tarih,Plaka,Gelir,Gider,Kâr,Not"];
@@ -267,7 +339,7 @@ el.btnFilter.addEventListener("click", renderTable);
 el.btnClear.addEventListener("click", ()=>{ el.qPlate.value=""; renderTable(); });
 el.btnCsv.addEventListener("click", exportCsv);
 
-/* ====== Grafik ====== */
+/* Grafik */
 function drawChart(){
   const months={};
   state.data.forEach(r=>{
@@ -286,14 +358,14 @@ function drawChart(){
   state.chart = new Chart(el.chart, {
     type:"bar",
     data:{ labels, datasets:[
-      {label:"Gelir", data:gelir, backgroundColor:"rgba(50,215,75,.6)"},
-      {label:"Gider", data:gider, backgroundColor:"rgba(255,59,48,.6)"},
+      {label:"Gelir", data:gelir, backgroundColor:"rgba(35,197,82,.7)"},
+      {label:"Gider", data:gider, backgroundColor:"rgba(255,59,48,.7)"},
     ]},
     options:{plugins:{legend:{position:"bottom"}}, scales:{y:{beginAtZero:true}}}
   });
 }
 
-/* ====== Bakım / ICS ====== */
+/* Bakım / ICS */
 function toICSDate(d){ return d.replaceAll("-",""); }
 function buildICS(items){
   const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//SAM//TRUCK//TR"];
@@ -325,7 +397,7 @@ function renderSvc(){
     const near=(d>=today && d<=soon) ? ' <span class="badge">yaklaşıyor</span>' : '';
     const tr=document.createElement("tr");
     tr.innerHTML = `<td>${x.service}${near}</td><td>${x.plate||""}</td><td>${x.note?"Bakım":"Muayene"}</td>
-      <td><button class="ghost" data-id="${x.id}">.ics</button></td>`;
+      <td><button class="ghost pill" data-id="${x.id}">.ics</button></td>`;
     tr.querySelector("button").addEventListener("click", ()=>{
       download(`sam_${x.plate||"bakim"}.ics`, buildICS([x]), "text/calendar");
     });
@@ -338,11 +410,8 @@ el.btnAllIcs.addEventListener("click", ()=>{
   download("sam_bakimlar.ics", buildICS(items), "text/calendar");
 });
 
-/* ====== İlk yükleme ====== */
-renderTable(); // list
-drawChart();   // reports grafiği hazır olsun
-renderSvc();   // service listesi
-// PWA SW kaydı (varsa)
+/* İlk yükleme */
+renderTable(); drawChart(); renderSvc();
 if('serviceWorker' in navigator){ window.addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js')); }
 </script>
 </body>
