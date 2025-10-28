@@ -6,322 +6,136 @@
 <title>SAM</title>
 <meta name="theme-color" content="#0a84ff">
 <link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-:root{--blue:#0a84ff;--bg:#f7f8fc;--card:#fff}
+:root{--blue:#0a84ff;--green:#32d74b;--red:#ff3b30;--bg:#f7f8fc}
 *{box-sizing:border-box}
 body{font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;margin:0;background:var(--bg);color:#111}
-header{position:sticky;top:0;z-index:2;background:var(--blue);color:#fff;padding:14px;text-align:center;font-size:20px}
+header{background:var(--blue);color:#fff;padding:14px;text-align:center;font-size:20px;position:sticky;top:0;z-index:2}
 main{padding:16px;display:grid;gap:16px}
-.card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-h3{margin:4px 0 10px}
-input,select,textarea{width:100%;padding:10px;margin:6px 0;border-radius:10px;border:1px solid #dcdcdc;background:#fff}
+.card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+input,select,textarea{width:100%;padding:10px;margin:6px 0;border-radius:10px;border:1px solid #dcdcdc}
 button{padding:10px 14px;border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:600}
-.btn{display:inline-block;margin:6px 6px 0 0}
-.btn.ghost{background:#eef3ff;color:var(--blue)}
-.btn.danger{background:#ff3b30}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+button.ghost{background:#eef3ff;color:var(--blue)}
+button.danger{background:var(--red);color:#fff}
 table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
-th,td{padding:8px;border-bottom:1px solid #eee;text-align:left;vertical-align:top}
-th{background:#fafbff;position:sticky;top:0}
-.badge{background:#eef3ff;color:var(--blue);padding:4px 8px;border-radius:999px;font-size:12px}
+th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+tr.profit{background:#e8fbe8}
+tr.loss{background:#ffefef}
 .total{background:#eef3ff;padding:10px;border-radius:10px;margin-top:8px}
-hr{border:0;border-top:1px solid #eee;margin:10px 0}
-small.mono{font-family:ui-monospace,Menlo,monospace;color:#666}
-.actions{display:flex;gap:6px;flex-wrap:wrap}
-footer{opacity:.7;text-align:center;padding-bottom:12px}
+.chart-container{position:relative;height:250px;width:100%}
 </style>
 </head>
 <body>
-<header>🚛 SAM — Tır Takip</header>
+<header>🚛 SAM — Tır Takip v2.0</header>
 <main>
 
-<!-- --- KAYIT FORMU --- -->
 <div class="card">
-  <h3>Yeni / Düzenle</h3>
-  <div class="row">
-    <input id="fDate" type="date" placeholder="Tarih">
-    <input id="fPlate" placeholder="Plaka (örn: 34ABC123)">
-  </div>
-  <div class="row">
-    <input id="fClient" placeholder="Müşteri">
-    <input id="fIncome" type="number" inputmode="decimal" placeholder="Gelir (₺)">
-  </div>
-  <div class="row3">
-    <input id="fFuel" type="number" inputmode="decimal" placeholder="Yakıt (₺)">
-    <input id="fToll" type="number" inputmode="decimal" placeholder="OGS/KGS (₺)">
-    <input id="fOther" type="number" inputmode="decimal" placeholder="Diğer (₺)">
-  </div>
-  <textarea id="fNote" placeholder="Not (opsiyonel)"></textarea>
-  <div class="row">
-    <input id="fService" type="date" placeholder="Muayene/Bakım Tarihi">
-    <input id="fDistance" type="number" inputmode="decimal" placeholder="KM (opsiyonel)">
-  </div>
-  <div class="actions">
-    <button class="btn" id="btnSave">Kaydet</button>
-    <button class="btn ghost" id="btnReset">Formu Temizle</button>
-  </div>
-  <small class="mono" id="editInfo"></small>
+  <h3>Yeni Kayıt</h3>
+  <input id="date" type="date">
+  <input id="plate" placeholder="Plaka (örn: 34ABC123)">
+  <input id="client" placeholder="Müşteri">
+  <input id="income" type="number" placeholder="Gelir (₺)">
+  <input id="expense" type="number" placeholder="Gider (₺)">
+  <textarea id="note" placeholder="Açıklama"></textarea>
+  <button id="btnAdd">Kaydet</button>
 </div>
 
-<!-- --- FİLTRE / DIŞA AKTAR --- -->
 <div class="card">
-  <h3>Arama & Dışa Aktar</h3>
+  <h3>Filtre & Dışa Aktar</h3>
   <div class="row">
     <input id="qPlate" placeholder="Plaka ara">
     <input id="qClient" placeholder="Müşteri ara">
   </div>
-  <div class="row">
-    <input id="qFrom" type="date">
-    <input id="qTo" type="date">
-  </div>
-  <div class="actions">
-    <button class="btn ghost" id="btnFilter">Filtrele</button>
-    <button class="btn ghost" id="btnClear">Temizle</button>
-    <button class="btn" id="btnCsv">CSV dışa aktar</button>
-    <button class="btn ghost" id="btnJsonOut">JSON yedekle</button>
-    <label class="btn" style="background:#555;">
-      JSON yükle
-      <input id="jsonIn" type="file" accept="application/json" style="display:none">
-    </label>
-  </div>
+  <button class="ghost" id="btnFilter">Filtrele</button>
+  <button class="ghost" id="btnClear">Temizle</button>
+  <button class="ghost" id="btnCsv">CSV Dışa Aktar</button>
   <div class="total" id="summary"></div>
 </div>
 
-<!-- --- KAYIT LİSTESİ --- -->
 <div class="card">
   <h3>Kayıtlar</h3>
-  <table id="tbl">
-    <thead>
-      <tr>
-        <th>Tarih</th><th>Plaka</th><th>Müşteri</th>
-        <th>Gelir</th><th>Gider</th><th>Kâr</th><th>Not</th><th>Aksiyon</th>
-      </tr>
-    </thead>
+  <table id="table">
+    <thead><tr><th>Tarih</th><th>Plaka</th><th>Müşteri</th><th>Gelir</th><th>Gider</th><th>Kâr</th><th>Not</th><th></th></tr></thead>
     <tbody></tbody>
   </table>
 </div>
 
-<!-- --- BAKIM / MUAYENE --- -->
 <div class="card">
-  <h3>Bakımlar (Muayene/Servis)</h3>
-  <p>Her kaydın “Muayene/Bakım Tarihi” alanı buraya otomatik düşer. 30 gün kala <span class="badge">yaklaşıyor</span> etiketi görünür.</p>
-  <table id="tblSvc">
-    <thead><tr><th>Tarih</th><th>Plaka</th><th>Tip</th><th>Aksiyon</th></tr></thead>
-    <tbody></tbody>
-  </table>
-  <div class="actions">
-    <button class="btn ghost" id="btnAllIcs">Tüm bakımları .ics olarak indir</button>
-  </div>
+  <h3>Aylık Rapor</h3>
+  <canvas id="chart"></canvas>
 </div>
-
-<footer>
-  <small>Veriler cihazında saklanır • <span id="recCount">0</span> kayıt</small>
-</footer>
 
 <script>
-/* --------- Veri --------- */
-const LSKEY = "samDataV2";
-let data = JSON.parse(localStorage.getItem(LSKEY) || "[]");
-let editingId = null;
+const LS="samDataV3"; let data=JSON.parse(localStorage.getItem(LS)||"[]");
+function save(){localStorage.setItem(LS,JSON.stringify(data));}
+function money(n){return (n||0).toLocaleString("tr-TR");}
 
-function saveLS(){ localStorage.setItem(LSKEY, JSON.stringify(data)); }
-function money(n){ return (n||0).toLocaleString("tr-TR"); }
-function num(v){ return parseFloat(v)||0; }
-
-/* --------- Kayıt ekle / güncelle --------- */
-document.getElementById("btnSave").onclick = () => {
-  const rec = {
-    id: editingId ?? crypto.randomUUID(),
-    date: fDate.value || "",
-    plate: fPlate.value.trim(),
-    client: fClient.value.trim(),
-    income: num(fIncome.value),
-    fuel: num(fFuel.value),
-    toll: num(fToll.value),
-    other: num(fOther.value),
-    note: fNote.value.trim(),
-    service: fService.value || "",
-    distance: num(fDistance.value)
-  };
-
-  // doğrulama
-  if(!rec.date || !rec.plate){
-    alert("Tarih ve plaka zorunludur.");
-    return;
-  }
-
-  // gider toplamı
-  rec.expense = rec.fuel + rec.toll + rec.other;
-
-  if(editingId){
-    data = data.map(x => x.id===editingId ? rec : x);
-    editingId = null; editInfo.textContent = "";
-  } else {
-    data.push(rec);
-  }
-
-  saveLS();
-  renderAll();
-  document.querySelectorAll("#fDate,#fPlate,#fClient,#fIncome,#fFuel,#fToll,#fOther,#fNote,#fService,#fDistance")
-          .forEach(el=>el.value="");
+function add(){
+ const r={
+   id:Date.now(),
+   date:date.value, plate:plate.value, client:client.value,
+   income:+income.value||0, expense:+expense.value||0,
+   note:note.value||""
+ };
+ if(!r.date||!r.plate){alert("Tarih ve plaka zorunlu");return;}
+ data.push(r); save(); render(); date.value=plate.value=client.value=income.value=expense.value=note.value="";
+}
+function del(id){if(confirm("Silinsin mi?")){data=data.filter(x=>x.id!=id);save();render();}}
+function render(){
+ const tb=document.querySelector("#table tbody"); tb.innerHTML="";
+ let sumIn=0,sumEx=0;
+ let list=[...data];
+ const qp=qPlate.value.toLowerCase(),qc=qClient.value.toLowerCase();
+ if(qp) list=list.filter(x=>x.plate.toLowerCase().includes(qp));
+ if(qc) list=list.filter(x=>x.client.toLowerCase().includes(qc));
+ list.sort((a,b)=>b.date.localeCompare(a.date));
+ list.forEach(r=>{
+   const k=r.income-r.expense; sumIn+=r.income; sumEx+=r.expense;
+   const tr=document.createElement("tr");
+   tr.className=k>=0?"profit":"loss";
+   tr.innerHTML=`<td>${r.date}</td><td>${r.plate}</td><td>${r.client}</td>
+   <td>${money(r.income)} ₺</td><td>${money(r.expense)} ₺</td>
+   <td>${money(k)} ₺</td><td>${r.note}</td>
+   <td><button class="danger" onclick="del(${r.id})">Sil</button></td>`;
+   tb.appendChild(tr);
+ });
+ summary.innerHTML=`Toplam Gelir: <b>${money(sumIn)} ₺</b> — Gider: <b>${money(sumEx)} ₺</b> — Kâr: <b>${money(sumIn-sumEx)} ₺</b>`;
+ drawChart();
+}
+function drawChart(){
+ const ctx=document.getElementById("chart");
+ const months={};
+ data.forEach(r=>{
+   const [y,m]=r.date.split("-"); const key=y+"-"+m;
+   if(!months[key]) months[key]={gelir:0,gider:0};
+   months[key].gelir+=r.income; months[key].gider+=r.expense;
+ });
+ const labels=Object.keys(months).sort();
+ const gelir=labels.map(k=>months[k].gelir);
+ const gider=labels.map(k=>months[k].gider);
+ if(window.myChart) window.myChart.destroy();
+ window.myChart=new Chart(ctx,{
+   type:"bar",
+   data:{labels,datasets:[
+     {label:"Gelir",data:gelir,backgroundColor:"rgba(50,215,75,0.6)"},
+     {label:"Gider",data:gider,backgroundColor:"rgba(255,59,48,0.6)"}
+   ]},
+   options:{plugins:{legend:{position:"bottom"}},scales:{y:{beginAtZero:true}}}
+ });
+}
+btnAdd.onclick=add;
+btnFilter.onclick=render;
+btnClear.onclick=()=>{qPlate.value=qClient.value="";render();}
+btnCsv.onclick=()=>{
+ let rows=["Tarih,Plaka,Müşteri,Gelir,Gider,Kâr,Not"];
+ data.forEach(r=>rows.push(`${r.date},${r.plate},${r.client},${r.income},${r.expense},${r.income-r.expense},"${r.note}"`));
+ const blob=new Blob([rows.join("\n")],{type:"text/csv"});
+ const a=document.createElement("a"); a.href=URL.createObjectURL(blob);a.download="sam_kayitlar.csv";a.click();
 };
-
-document.getElementById("btnReset").onclick = () => {
-  editingId = null; editInfo.textContent = "";
-  document.querySelectorAll("#fDate,#fPlate,#fClient,#fIncome,#fFuel,#fToll,#fOther,#fNote,#fService,#fDistance")
-          .forEach(el=>el.value="");
-};
-
-/* --------- Filtre --------- */
-function applyFilter(list){
-  const p = qPlate.value.trim().toLowerCase();
-  const c = qClient.value.trim().toLowerCase();
-  const from = qFrom.value ? new Date(qFrom.value) : null;
-  const to = qTo.value ? new Date(qTo.value) : null;
-
-  return list.filter(x=>{
-    const okP = !p || (x.plate||"").toLowerCase().includes(p);
-    const okC = !c || (x.client||"").toLowerCase().includes(c);
-    const d = x.date ? new Date(x.date) : null;
-    const okFrom = !from || (d && d >= from);
-    const okTo = !to || (d && d <= to);
-    return okP && okC && okFrom && okTo;
-  });
-}
-document.getElementById("btnFilter").onclick = renderTable;
-document.getElementById("btnClear").onclick = () => { qPlate.value=qClient.value=qFrom.value=qTo.value=""; renderTable(); };
-
-/* --------- Tablo render --------- */
-function renderTable(){
-  const tbody = document.querySelector("#tbl tbody");
-  tbody.innerHTML = "";
-  let list = [...data].sort((a,b)=> (a.date<b.date?1:-1));
-  list = applyFilter(list);
-
-  let sumIn=0, sumEx=0;
-  list.forEach(x=>{
-    sumIn += x.income; sumEx += x.expense||0;
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${x.date||""}</td>
-      <td>${x.plate||""}</td>
-      <td>${x.client||""}</td>
-      <td>${money(x.income)} ₺</td>
-      <td>${money(x.expense)} ₺</td>
-      <td>${money((x.income-(x.expense||0)))} ₺</td>
-      <td>${x.note? x.note.replace(/</g,"&lt;") : ""}</td>
-      <td class="actions">
-        <button class="btn ghost">Düzenle</button>
-        <button class="btn danger">Sil</button>
-      </td>`;
-    // edit
-    tr.querySelector(".ghost").onclick = () => {
-      editingId = x.id; editInfo.textContent = "Düzenleniyor: " + x.plate + " ("+x.date+")";
-      fDate.value=x.date||""; fPlate.value=x.plate||""; fClient.value=x.client||"";
-      fIncome.value=x.income||""; fFuel.value=x.fuel||""; fToll.value=x.toll||"";
-      fOther.value=x.other||""; fNote.value=x.note||""; fService.value=x.service||"";
-      fDistance.value=x.distance||"";
-      window.scrollTo({top:0,behavior:"smooth"});
-    };
-    // delete
-    tr.querySelector(".danger").onclick = () => {
-      if(confirm("Bu kaydı silmek istediğine emin misin?")){
-        data = data.filter(y=>y.id!==x.id); saveLS(); renderAll();
-      }
-    };
-    tbody.appendChild(tr);
-  });
-
-  summary.innerHTML = `Toplam Gelir: <b>${money(sumIn)} ₺</b> •
-    Toplam Gider: <b>${money(sumEx)} ₺</b> •
-    Kâr: <b>${money(sumIn-sumEx)} ₺</b> •
-    Kayıt: <b>${list.length}</b>`;
-  recCount.textContent = data.length;
-}
-
-/* --------- CSV / JSON --------- */
-function download(name,content,type="text/plain"){
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([content],{type}));
-  a.download=name; a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),500);
-}
-document.getElementById("btnCsv").onclick = () => {
-  const header = ["date","plate","client","income","fuel","toll","other","expense","note","service","distance"];
-  const rows = [header.join(",")].concat(
-    data.map(x=> header.map(h=> `"${(x[h]??"").toString().replace(/"/g,'""')}"`).join(","))
-  );
-  download("sam_kayitlar.csv", rows.join("\n"), "text/csv");
-};
-document.getElementById("btnJsonOut").onclick = () => {
-  download("sam_yedek.json", JSON.stringify({schema:"v2", items:data},null,2), "application/json");
-};
-document.getElementById("jsonIn").onchange = async (e) => {
-  const file = e.target.files[0]; if(!file) return;
-  const txt = await file.text();
-  const obj = JSON.parse(txt);
-  if(obj && Array.isArray(obj.items)){ data = obj.items; saveLS(); renderAll(); alert("Yedek içe aktarıldı."); }
-  else alert("Geçersiz yedek dosyası.");
-};
-
-/* --------- Bakımlar & .ics --------- */
-function toICSDate(d){
-  // "YYYY-MM-DD" -> "YYYYMMDD"
-  return d.replaceAll("-",""); 
-}
-function buildICS(items){
-  const lines = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//SAM//TRUCK//TR"];
-  items.forEach(x=>{
-    const dt = toICSDate(x.service);
-    lines.push("BEGIN:VEVENT");
-    lines.push("UID:"+x.id+"@sam");
-    lines.push("DTSTAMP:"+dt+"T090000Z");
-    lines.push("DTSTART;VALUE=DATE:"+dt);
-    lines.push("SUMMARY:"+ (x.plate||"Tır") +" bakım/muayene");
-    lines.push("DESCRIPTION:"+ (x.note?x.note.replace(/\n/g," ") :""));
-    lines.push("END:VEVENT");
-  });
-  lines.push("END:VCALENDAR");
-  return lines.join("\r\n");
-}
-document.getElementById("btnAllIcs").onclick = () => {
-  const svc = data.filter(x=>x.service);
-  if(!svc.length){ alert("Kayıtlarda bakım/muayene tarihi yok."); return; }
-  download("sam_bakimlar.ics", buildICS(svc), "text/calendar");
-};
-
-function renderSvc(){
-  const tbody = document.querySelector("#tblSvc tbody");
-  tbody.innerHTML="";
-  const today = new Date();
-  const soon = new Date(); soon.setDate(today.getDate()+30);
-  const list = data.filter(x=>x.service).sort((a,b)=> (a.service>b.service?1:-1));
-  list.forEach(x=>{
-    const tr = document.createElement("tr");
-    const d = new Date(x.service);
-    const flag = (d>=today && d<=soon) ? ' <span class="badge">yaklaşıyor</span>' : '';
-    tr.innerHTML = `
-      <td>${x.service}${flag}</td>
-      <td>${x.plate||""}</td>
-      <td>${x.note? "Bakım" : "Muayene"}</td>
-      <td class="actions"><button class="btn ghost">.ics</button></td>`;
-    tr.querySelector("button").onclick = ()=>{
-      download(`sam_${x.plate||"bakim"}.ics`, buildICS([x]), "text/calendar");
-    };
-    tbody.appendChild(tr);
-  });
-}
-
-/* --------- PWA (SW kaydı) --------- */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js'));
-}
-
-/* --------- Render hepsi --------- */
-function renderAll(){ renderTable(); renderSvc(); }
-renderAll();
+render();
 </script>
+
 </main>
 </body>
 </html>
