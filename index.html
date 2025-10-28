@@ -1,1 +1,100 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SAM</title>
+<meta name="theme-color" content="#0a84ff">
+<style>
+body {font-family:-apple-system,system-ui,sans-serif;margin:0;background:#f7f8fc;}
+header{background:#0a84ff;color:#fff;padding:14px;text-align:center;font-size:20px;}
+main{padding:16px;}
+input,select,textarea{width:100%;padding:10px;margin:5px 0;border-radius:8px;border:1px solid #ccc;}
+button{padding:10px 14px;border:0;border-radius:8px;background:#0a84ff;color:#fff;font-size:15px;}
+.card{background:#fff;border-radius:10px;padding:16px;margin-bottom:16px;box-shadow:0 2px 6px rgba(0,0,0,.1);}
+.table{width:100%;border-collapse:collapse;margin-top:10px;}
+th,td{padding:8px;border-bottom:1px solid #ddd;font-size:14px;}
+.total{background:#eef3ff;padding:10px;border-radius:8px;}
+</style>
+</head>
+<body>
+<header>🚛 SAM — Tır Takip Uygulaması</header>
+<main>
+<div class="card">
+  <h3>Yeni Kayıt</h3>
+  <input id="date" type="date">
+  <input id="plate" placeholder="Plaka (örn: 34ABC123)">
+  <input id="client" placeholder="Müşteri">
+  <input id="income" type="number" placeholder="Gelir (₺)">
+  <input id="expense" type="number" placeholder="Gider (₺)">
+  <input id="service" type="date" placeholder="Muayene/Bakım Tarihi">
+  <button onclick="addRecord()">Kaydet</button>
+</div>
 
+<div class="card">
+  <h3>Kayıtlar</h3>
+  <table class="table" id="dataTable">
+    <tr><th>Tarih</th><th>Plaka</th><th>Müşteri</th><th>Gelir</th><th>Gider</th><th>Kâr</th></tr>
+  </table>
+  <div class="total" id="summary"></div>
+</div>
+
+<div class="card">
+  <h3>Bakım / Muayene Takvimi</h3>
+  <ul id="calendar"></ul>
+</div>
+</main>
+
+<script>
+let data = JSON.parse(localStorage.getItem("samData")||"[]");
+
+function addRecord(){
+  let d = {
+    date: date.value,
+    plate: plate.value,
+    client: client.value,
+    income: parseFloat(income.value)||0,
+    expense: parseFloat(expense.value)||0,
+    service: service.value
+  };
+  data.push(d);
+  localStorage.setItem("samData",JSON.stringify(data));
+  render();
+  date.value=plate.value=client.value=income.value=expense.value=service.value="";
+}
+
+function render(){
+  let t = document.getElementById("dataTable");
+  t.innerHTML = "<tr><th>Tarih</th><th>Plaka</th><th>Müşteri</th><th>Gelir</th><th>Gider</th><th>Kâr</th></tr>";
+  let sumIn=0,sumEx=0;
+  data.forEach(r=>{
+    let profit=r.income-r.expense;
+    sumIn+=r.income; sumEx+=r.expense;
+    t.innerHTML += `<tr>
+      <td>${r.date||""}</td>
+      <td>${r.plate||""}</td>
+      <td>${r.client||""}</td>
+      <td>${r.income.toLocaleString("tr-TR")} ₺</td>
+      <td>${r.expense.toLocaleString("tr-TR")} ₺</td>
+      <td>${profit.toLocaleString("tr-TR")} ₺</td>
+    </tr>`;
+  });
+  document.getElementById("summary").innerHTML =
+    `Toplam Gelir: <b>${sumIn.toLocaleString("tr-TR")} ₺</b> &nbsp; 
+     Toplam Gider: <b>${sumEx.toLocaleString("tr-TR")} ₺</b> &nbsp; 
+     Kâr: <b>${(sumIn-sumEx).toLocaleString("tr-TR")} ₺</b>`;
+  renderCalendar();
+}
+
+function renderCalendar(){
+  let c=document.getElementById("calendar");
+  c.innerHTML="";
+  data.filter(x=>x.service).forEach(x=>{
+    c.innerHTML+=`<li>${x.plate} — ${x.service}</li>`;
+  });
+}
+
+render();
+</script>
+</body>
+</html>
