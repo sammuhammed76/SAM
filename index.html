@@ -8,33 +8,54 @@
 <link rel="manifest" href="manifest.json">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-:root{--blue:#0a84ff;--green:#32d74b;--red:#ff3b30;--bg:#f7f8fc}
+:root{
+  --blue:#0a84ff;
+  --green:#32d74b;
+  --red:#ff3b30;
+  --bg:#f7f8fc;
+  --text:#111;
+  --card:#fff;
+}
+body.dark{
+  --bg:#121212;
+  --text:#eee;
+  --card:#1e1e1e;
+}
 *{box-sizing:border-box}
-body{font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;margin:0;background:var(--bg);color:#111}
-header{background:var(--blue);color:#fff;padding:14px;text-align:center;font-size:20px;position:sticky;top:0;z-index:2}
+body{font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;margin:0;
+  background:var(--bg);color:var(--text);transition:background .3s,color .3s;}
+header{background:var(--blue);color:#fff;padding:14px;text-align:center;font-size:20px;
+  position:sticky;top:0;z-index:2}
 main{padding:16px;display:grid;gap:16px}
-.card{background:#fff;border-radius:12px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-input,select,textarea{width:100%;padding:10px;margin:6px 0;border-radius:10px;border:1px solid #dcdcdc}
+.card{background:var(--card);border-radius:12px;padding:14px;
+  box-shadow:0 2px 6px rgba(0,0,0,.08)}
+input,select,textarea{width:100%;padding:10px;margin:6px 0;border-radius:10px;
+  border:1px solid #dcdcdc;background:#fff;color:#000}
+body.dark input,body.dark textarea{background:#333;color:#eee;border:1px solid #555}
 button{padding:10px 14px;border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:600}
 button.ghost{background:#eef3ff;color:var(--blue)}
 button.danger{background:var(--red);color:#fff}
+button.switch{background:#555;}
 table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
 th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
-tr.profit{background:#e8fbe8}
-tr.loss{background:#ffefef}
+tr.profit{background:rgba(50,215,75,0.08)}
+tr.loss{background:rgba(255,59,48,0.08)}
 .total{background:#eef3ff;padding:10px;border-radius:10px;margin-top:8px}
 .chart-container{position:relative;height:250px;width:100%}
+body.dark .total{background:#222}
 </style>
 </head>
 <body>
-<header>🚛 SAM — Tır Takip v2.0</header>
+<header>🚛 SAM — Tır Takip v2.5</header>
 <main>
 
 <div class="card">
   <h3>Yeni Kayıt</h3>
   <input id="date" type="date">
-  <input id="plate" placeholder="Plaka (örn: 34ABC123)">
-  <input id="client" placeholder="Müşteri">
+  <input id="plate" list="plateList" placeholder="Plaka (örn: 34ABC123)">
+  <datalist id="plateList"></datalist>
+  <input id="client" list="clientList" placeholder="Müşteri">
+  <datalist id="clientList"></datalist>
   <input id="income" type="number" placeholder="Gelir (₺)">
   <input id="expense" type="number" placeholder="Gider (₺)">
   <textarea id="note" placeholder="Açıklama"></textarea>
@@ -43,13 +64,12 @@ tr.loss{background:#ffefef}
 
 <div class="card">
   <h3>Filtre & Dışa Aktar</h3>
-  <div class="row">
-    <input id="qPlate" placeholder="Plaka ara">
-    <input id="qClient" placeholder="Müşteri ara">
-  </div>
+  <input id="qPlate" placeholder="Plaka ara">
+  <input id="qClient" placeholder="Müşteri ara">
   <button class="ghost" id="btnFilter">Filtrele</button>
   <button class="ghost" id="btnClear">Temizle</button>
   <button class="ghost" id="btnCsv">CSV Dışa Aktar</button>
+  <button class="switch" id="btnDark">🌙 Karanlık Mod</button>
   <div class="total" id="summary"></div>
 </div>
 
@@ -67,21 +87,29 @@ tr.loss{background:#ffefef}
 </div>
 
 <script>
-const LS="samDataV3"; let data=JSON.parse(localStorage.getItem(LS)||"[]");
+const LS="samDataV4"; let data=JSON.parse(localStorage.getItem(LS)||"[]");
+const LSLIST="samLists"; let lists=JSON.parse(localStorage.getItem(LSLIST)||"{plates:[],clients:[]}");
 function save(){localStorage.setItem(LS,JSON.stringify(data));}
+function saveLists(){localStorage.setItem(LSLIST,JSON.stringify(lists));}
 function money(n){return (n||0).toLocaleString("tr-TR");}
 
 function add(){
- const r={
-   id:Date.now(),
-   date:date.value, plate:plate.value, client:client.value,
-   income:+income.value||0, expense:+expense.value||0,
-   note:note.value||""
- };
+ const r={id:Date.now(),date:date.value,plate:plate.value.trim(),client:client.value.trim(),
+          income:+income.value||0,expense:+expense.value||0,note:note.value.trim()};
  if(!r.date||!r.plate){alert("Tarih ve plaka zorunlu");return;}
- data.push(r); save(); render(); date.value=plate.value=client.value=income.value=expense.value=note.value="";
+ data.push(r);
+ if(r.plate&&!lists.plates.includes(r.plate)) lists.plates.push(r.plate);
+ if(r.client&&!lists.clients.includes(r.client)) lists.clients.push(r.client);
+ save();saveLists();render();fillLists();
+ date.value=plate.value=client.value=income.value=expense.value=note.value="";
 }
+
 function del(id){if(confirm("Silinsin mi?")){data=data.filter(x=>x.id!=id);save();render();}}
+function fillLists(){
+ plateList.innerHTML=lists.plates.map(p=>`<option value="${p}">`).join("");
+ clientList.innerHTML=lists.clients.map(c=>`<option value="${c}">`).join("");
+}
+
 function render(){
  const tb=document.querySelector("#table tbody"); tb.innerHTML="";
  let sumIn=0,sumEx=0;
@@ -103,6 +131,7 @@ function render(){
  summary.innerHTML=`Toplam Gelir: <b>${money(sumIn)} ₺</b> — Gider: <b>${money(sumEx)} ₺</b> — Kâr: <b>${money(sumIn-sumEx)} ₺</b>`;
  drawChart();
 }
+
 function drawChart(){
  const ctx=document.getElementById("chart");
  const months={};
@@ -124,6 +153,7 @@ function drawChart(){
    options:{plugins:{legend:{position:"bottom"}},scales:{y:{beginAtZero:true}}}
  });
 }
+
 btnAdd.onclick=add;
 btnFilter.onclick=render;
 btnClear.onclick=()=>{qPlate.value=qClient.value="";render();}
@@ -133,7 +163,14 @@ btnCsv.onclick=()=>{
  const blob=new Blob([rows.join("\n")],{type:"text/csv"});
  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);a.download="sam_kayitlar.csv";a.click();
 };
-render();
+
+btnDark.onclick=()=>{
+ document.body.classList.toggle("dark");
+ localStorage.setItem("samTheme",document.body.classList.contains("dark")?"dark":"light");
+};
+
+if(localStorage.getItem("samTheme")==="dark") document.body.classList.add("dark");
+fillLists();render();
 </script>
 
 </main>
