@@ -9,260 +9,341 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root{
-  --blue:#0a84ff;
-  --green:#32d74b;
-  --red:#ff3b30;
-  --bg:#f7f8fc;
-  --text:#111;
-  --card:#fff;
+  --blue:#0a84ff; --green:#32d74b; --red:#ff3b30;
+  --bg:#f7f8fc; --text:#111; --card:#fff; --muted:#eef3ff
 }
 body.dark{
-  --bg:#121212;
-  --text:#eee;
-  --card:#1e1e1e;
+  --bg:#121212; --text:#eee; --card:#1e1e1e; --muted:#20232b
 }
-*{box-sizing:border-box}
-body{font-family:-apple-system,system-ui,Segoe UI,Roboto,sans-serif;margin:0;
-  background:var(--bg);color:var(--text);transition:background .3s,color .3s;}
-header{background:var(--blue);color:#fff;padding:14px;text-align:center;font-size:20px;
-  position:sticky;top:0;z-index:2}
+*{box-sizing:border-box} body{font-family:-apple-system,system-ui,Roboto,sans-serif;margin:0;background:var(--bg);color:var(--text);transition:.2s}
+header{background:var(--blue);color:#fff;padding:14px;text-align:center;font-size:20px;position:sticky;top:0;z-index:3}
+nav.tabs{display:flex;gap:8px;overflow:auto;padding:10px 12px;background:var(--muted);position:sticky;top:56px;z-index:2}
+nav.tabs button{border:0;border-radius:999px;padding:10px 14px;background:#eaf0ff;color:#0a84ff;font-weight:600;white-space:nowrap}
+nav.tabs button.active{background:#0a84ff;color:#fff}
 main{padding:16px;display:grid;gap:16px}
-.card{background:var(--card);border-radius:12px;padding:14px;
-  box-shadow:0 2px 6px rgba(0,0,0,.08)}
-input,select,textarea{width:100%;padding:10px;margin:6px 0;border-radius:10px;
-  border:1px solid #dcdcdc;background:#fff;color:#000}
+.card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+input,textarea{width:100%;padding:10px;margin:6px 0;border-radius:10px;border:1px solid #dcdcdc;background:#fff;color:#000}
 body.dark input,body.dark textarea{background:#333;color:#eee;border:1px solid #555}
 button{padding:10px 14px;border:0;border-radius:10px;background:var(--blue);color:#fff;font-weight:600}
-button.ghost{background:#eef3ff;color:var(--blue)}
-button.danger{background:var(--red);color:#fff}
-button.switch{background:#555;}
+button.ghost{background:#eef3ff;color:#0a84ff} body.dark button.ghost{background:#2a2a2a;color:#9ac1ff}
+button.danger{background:var(--red)}
 table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
 th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
-tr.profit{background:rgba(50,215,75,0.08)}
-tr.loss{background:rgba(255,59,48,0.08)}
-.total{background:#eef3ff;padding:10px;border-radius:10px;margin-top:8px}
-.chart-container{position:relative;height:250px;width:100%}
-body.dark .total{background:#222}
+tr.profit{background:rgba(50,215,75,.08)} tr.loss{background:rgba(255,59,48,.08)}
+.total{background:var(--muted);padding:10px;border-radius:10px;margin-top:8px}
+.tab{display:none} .tab.active{display:block}
+.badge{background:#eef3ff;color:#0a84ff;border-radius:999px;padding:4px 8px;font-size:12px}
+body.dark .badge{background:#2a2a2a;color:#9ac1ff}
+.small{font-size:12px;opacity:.7}
 </style>
 </head>
 <body>
-<header>🚛 SAM — Tır Takip v2.5</header>
+<header>🚛 SAM — Tır Takip (Sekmeli)</header>
+
+<nav class="tabs">
+  <button data-tab="add" class="active">Kayıt Ekle</button>
+  <button data-tab="list">Kayıtlar</button>
+  <button data-tab="reports">Raporlar</button>
+  <button data-tab="service">Bakım</button>
+  <button data-tab="settings">Ayarlar</button>
+</nav>
+
 <main>
+  <!-- KAYIT EKLE -->
+  <section class="tab active" id="tab-add">
+    <div class="card">
+      <h3>Yeni Kayıt</h3>
+      <input id="date" type="date">
+      <input id="plate" list="plateList" placeholder="Plaka (örn: 34ABC123)">
+      <datalist id="plateList"></datalist>
+      <input id="income" type="number" inputmode="decimal" placeholder="Gelir (₺)">
+      <input id="expense" type="number" inputmode="decimal" placeholder="Gider (₺)">
+      <textarea id="note" placeholder="Açıklama (opsiyonel)"></textarea>
+      <input id="service" type="date" placeholder="Muayene/Bakım Tarihi (ops.)">
+      <button id="btnAdd">Kaydet</button>
+    </div>
+    <p class="small">Zorunlu alanlar: Tarih, Plaka</p>
+  </section>
 
-<div class="card">
-  <h3>Yeni Kayıt</h3>
-  <input id="date" type="date">
-  <input id="plate" list="plateList" placeholder="Plaka (örn: 34ABC123)">
-  <datalist id="plateList"></datalist>
-  <input id="client" list="clientList" placeholder="Müşteri">
-  <datalist id="clientList"></datalist>
-  <input id="income" type="number" placeholder="Gelir (₺)">
-  <input id="expense" type="number" placeholder="Gider (₺)">
-  <textarea id="note" placeholder="Açıklama"></textarea>
-  <button id="btnAdd">Kaydet</button>
-</div>
+  <!-- KAYITLAR -->
+  <section class="tab" id="tab-list">
+    <div class="card">
+      <h3>Filtre & Dışa Aktar</h3>
+      <input id="qPlate" placeholder="Plaka ara">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+        <button class="ghost" id="btnFilter">Filtrele</button>
+        <button class="ghost" id="btnClear">Temizle</button>
+        <button class="ghost" id="btnCsv">CSV Dışa Aktar</button>
+      </div>
+      <div class="total" id="summary"></div>
+    </div>
 
-<div class="card">
-  <h3>Filtre & Dışa Aktar</h3>
-  <input id="qPlate" placeholder="Plaka ara">
-  <input id="qClient" placeholder="Müşteri ara">
-  <button class="ghost" id="btnFilter">Filtrele</button>
-  <button class="ghost" id="btnClear">Temizle</button>
-  <button class="ghost" id="btnCsv">CSV Dışa Aktar</button>
-  <button class="switch" id="btnDark">🌙 Karanlık Mod</button>
-  <div class="total" id="summary"></div>
-</div>
+    <div class="card">
+      <h3>Kayıtlar</h3>
+      <table id="table">
+        <thead><tr><th>Tarih</th><th>Plaka</th><th>Gelir</th><th>Gider</th><th>Kâr</th><th>Not</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
 
-<div class="card">
-  <h3>Kayıtlar</h3>
-  <table id="table">
-    <thead><tr><th>Tarih</th><th>Plaka</th><th>Müşteri</th><th>Gelir</th><th>Gider</th><th>Kâr</th><th>Not</th><th></th></tr></thead>
-    <tbody></tbody>
-  </table>
-</div>
+  <!-- RAPORLAR -->
+  <section class="tab" id="tab-reports">
+    <div class="card">
+      <h3>Aylık Rapor</h3>
+      <canvas id="chart" height="280"></canvas>
+    </div>
+  </section>
 
-<div class="card">
-  <h3>Aylık Rapor</h3>
-  <canvas id="chart"></canvas>
-</div>
+  <!-- BAKIM -->
+  <section class="tab" id="tab-service">
+    <div class="card">
+      <h3>Bakımlar / Muayeneler</h3>
+      <p>“Kayıt Ekle” sekmesinde girilen <b>Muayene/Bakım Tarihi</b> olan kayıtlar burada listelenir.</p>
+      <table id="tblSvc">
+        <thead><tr><th>Tarih</th><th>Plaka</th><th>Tip</th><th>Aksiyon</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div style="margin-top:8px">
+        <button class="ghost" id="btnAllIcs">Tüm bakımları .ics indir</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- AYARLAR -->
+  <section class="tab" id="tab-settings">
+    <div class="card">
+      <h3>Görünüm</h3>
+      <button id="btnDark">🌙 Karanlık Mod</button>
+      <p class="small">Tema tercihin ve son seçtiğin sekme cihazında saklanır.</p>
+    </div>
+  </section>
+</main>
 
 <script>
-/* ====== Yardımcılar ====== */
-const LS = "samDataV4";
+/* ====== Ana durum ====== */
+const LS = "samDataV5";
 const LSLIST = "samLists";
-function money(n){ return (n||0).toLocaleString("tr-TR"); }
-function saveData(){ localStorage.setItem(LS, JSON.stringify(state.data)); }
+const LSTAB = "samTab";
+const LSTHEME = "samTheme";
+
+const state = {
+  data: JSON.parse(localStorage.getItem(LS) || "[]"),
+  lists: JSON.parse(localStorage.getItem(LSLIST) || '{"plates":[]}'),
+  chart: null
+};
+function save(){ localStorage.setItem(LS, JSON.stringify(state.data)); }
 function saveLists(){ localStorage.setItem(LSLIST, JSON.stringify(state.lists)); }
+function money(n){ return (n||0).toLocaleString("tr-TR"); }
 
-/* ====== DOM Hazır olunca ====== */
-document.addEventListener("DOMContentLoaded", () => {
-  // Tüm elemanları elle seç (Safari global yapmaz)
-  const el = {
-    date: document.getElementById("date"),
-    plate: document.getElementById("plate"),
-    client: document.getElementById("client"),
-    income: document.getElementById("income"),
-    expense: document.getElementById("expense"),
-    note: document.getElementById("note"),
-    qPlate: document.getElementById("qPlate"),
-    qClient: document.getElementById("qClient"),
-    plateList: document.getElementById("plateList"),
-    clientList: document.getElementById("clientList"),
-    tblBody: document.querySelector("#table tbody"),
-    summary: document.getElementById("summary"),
-    chart: document.getElementById("chart"),
-    // butonlar
-    btnAdd: document.getElementById("btnAdd"),
-    btnFilter: document.getElementById("btnFilter"),
-    btnClear: document.getElementById("btnClear"),
-    btnCsv: document.getElementById("btnCsv"),
-    btnDark: document.getElementById("btnDark"),
-  };
+/* ====== Sekmeler ====== */
+const tabs = document.querySelectorAll("nav.tabs button");
+const sections = {
+  add: document.getElementById("tab-add"),
+  list: document.getElementById("tab-list"),
+  reports: document.getElementById("tab-reports"),
+  service: document.getElementById("tab-service"),
+  settings: document.getElementById("tab-settings"),
+};
+function openTab(name){
+  tabs.forEach(b=>b.classList.toggle("active", b.dataset.tab===name));
+  Object.entries(sections).forEach(([k,el])=> el.classList.toggle("active", k===name));
+  localStorage.setItem(LSTAB, name);
+  // rapor sekmesine geçince grafiği tazele
+  if(name==="reports") drawChart();
+  if(name==="service") renderSvc();
+}
+tabs.forEach(b=> b.addEventListener("click", ()=> openTab(b.dataset.tab)));
+openTab(localStorage.getItem(LSTAB) || "add");
 
-  // Uygulama durumu
-  window.state = {
-    data: JSON.parse(localStorage.getItem(LS) || "[]"),
-    lists: JSON.parse(localStorage.getItem(LSLIST) || '{"plates":[],"clients":[]}'),
-    chart: null
-  };
-
-  /* ---- Otomatik tamamlama listelerini doldur ---- */
-  function fillLists(){
-    el.plateList.innerHTML = state.lists.plates.map(p=>`<option value="${p}">`).join("");
-    el.clientList.innerHTML = state.lists.clients.map(c=>`<option value="${c}">`).join("");
-  }
-
-  /* ---- Tablo ve özet ---- */
-  function render(){
-    el.tblBody.innerHTML = "";
-    let sumIn = 0, sumEx = 0;
-    let list = [...state.data];
-
-    const qp = (el.qPlate.value||"").toLowerCase();
-    const qc = (el.qClient.value||"").toLowerCase();
-    if(qp) list = list.filter(x => (x.plate||"").toLowerCase().includes(qp));
-    if(qc) list = list.filter(x => (x.client||"").toLowerCase().includes(qc));
-
-    list.sort((a,b)=> b.date.localeCompare(a.date));
-
-    list.forEach(r=>{
-      const k = (r.income||0) - (r.expense||0);
-      sumIn += (r.income||0); sumEx += (r.expense||0);
-      const tr = document.createElement("tr");
-      tr.className = k>=0 ? "profit" : "loss";
-      tr.innerHTML = `
-        <td>${r.date||""}</td>
-        <td>${r.plate||""}</td>
-        <td>${r.client||""}</td>
-        <td>${money(r.income)} ₺</td>
-        <td>${money(r.expense)} ₺</td>
-        <td>${money(k)} ₺</td>
-        <td>${(r.note||"").replace(/</g,"&lt;")}</td>
-        <td><button class="danger" data-id="${r.id}">Sil</button></td>
-      `;
-      // sil
-      tr.querySelector("button").addEventListener("click", (e)=>{
-        const id = e.currentTarget.getAttribute("data-id");
-        if(confirm("Silinsin mi?")){
-          state.data = state.data.filter(x => String(x.id)!==String(id));
-          saveData(); render(); drawChart();
-        }
-      });
-      el.tblBody.appendChild(tr);
-    });
-
-    el.summary.innerHTML = `Toplam Gelir: <b>${money(sumIn)} ₺</b> — Gider: <b>${money(sumEx)} ₺</b> — Kâr: <b>${money(sumIn-sumEx)} ₺</b>`;
-    drawChart();
-  }
-
-  /* ---- Grafik ---- */
-  function drawChart(){
-    const months = {};
-    state.data.forEach(r=>{
-      if(!r.date) return;
-      const [y,m] = r.date.split("-");
-      const key = `${y}-${m}`;
-      if(!months[key]) months[key] = {gelir:0, gider:0};
-      months[key].gelir += (+r.income||0);
-      months[key].gider += (+r.expense||0);
-    });
-    const labels = Object.keys(months).sort();
-    const gelir = labels.map(k=>months[k].gelir);
-    const gider = labels.map(k=>months[k].gider);
-
-    if(state.chart) { state.chart.destroy(); state.chart = null; }
-    state.chart = new Chart(el.chart, {
-      type: "bar",
-      data: {
-        labels,
-        datasets: [
-          { label:"Gelir", data: gelir, backgroundColor:"rgba(50,215,75,0.6)" },
-          { label:"Gider", data: gider, backgroundColor:"rgba(255,59,48,0.6)" }
-        ]
-      },
-      options: { plugins:{ legend:{ position:"bottom" } }, scales:{ y:{ beginAtZero:true } } }
-    });
-  }
-
-  /* ---- Kayıt ekle ---- */
-  function add(){
-    const r = {
-      id: Date.now(),
-      date: el.date.value,
-      plate: (el.plate.value||"").trim(),
-      client: (el.client.value||"").trim(),
-      income: +el.income.value || 0,
-      expense: +el.expense.value || 0,
-      note: (el.note.value||"").trim()
-    };
-    if(!r.date || !r.plate){ alert("Tarih ve plaka zorunlu"); return; }
-
-    state.data.push(r);
-    if(r.plate && !state.lists.plates.includes(r.plate)) state.lists.plates.push(r.plate);
-    if(r.client && !state.lists.clients.includes(r.client)) state.lists.clients.push(r.client);
-
-    saveData(); saveLists(); fillLists(); render();
-
-    // formu temizle
-    el.date.value = el.plate.value = el.client.value = el.income.value = el.expense.value = el.note.value = "";
-  }
-
-  /* ---- CSV dışa aktar ---- */
-  function exportCsv(){
-    const rows = ["Tarih,Plaka,Müşteri,Gelir,Gider,Kâr,Not"];
-    state.data.forEach(r=>{
-      const k = (r.income||0)-(r.expense||0);
-      rows.push(`${r.date||""},${r.plate||""},${r.client||""},${r.income||0},${r.expense||0},${k},"${(r.note||"").replace(/"/g,'""')}"`);
-    });
-    const blob = new Blob([rows.join("\n")], {type:"text/csv"});
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "sam_kayitlar.csv";
-    a.click();
-    setTimeout(()=>URL.revokeObjectURL(a.href), 500);
-  }
-
-  /* ---- Tema ---- */
-  function applyTheme(){
-    if(localStorage.getItem("samTheme")==="dark") document.body.classList.add("dark");
-    else document.body.classList.remove("dark");
-  }
-  function toggleDark(){
-    const nowDark = !document.body.classList.contains("dark");
-    document.body.classList.toggle("dark", nowDark);
-    localStorage.setItem("samTheme", nowDark ? "dark" : "light");
-  }
-
-  /* ---- Olay bağla ---- */
-  el.btnAdd.addEventListener("click", add);
-  el.btnFilter.addEventListener("click", render);
-  el.btnClear.addEventListener("click", ()=>{ el.qPlate.value=""; el.qClient.value=""; render(); });
-  el.btnCsv.addEventListener("click", exportCsv);
-  el.btnDark.addEventListener("click", toggleDark);
-
-  /* ---- İlk yükleme ---- */
-  applyTheme();
-  fillLists();
-  render();
+/* ====== Tema ====== */
+function applyTheme(){
+  const dark = localStorage.getItem(LSTHEME)==="dark";
+  document.body.classList.toggle("dark", dark);
+}
+applyTheme();
+document.getElementById("btnDark").addEventListener("click", ()=>{
+  const dark = !document.body.classList.contains("dark");
+  document.body.classList.toggle("dark", dark);
+  localStorage.setItem(LSTHEME, dark ? "dark" : "light");
 });
+
+/* ====== Otomatik tamamlama (plaka) ====== */
+function fillLists(){
+  const dl = document.getElementById("plateList");
+  dl.innerHTML = (state.lists.plates||[]).map(p=>`<option value="${p}">`).join("");
+}
+fillLists();
+
+/* ====== Kayıt ekle ====== */
+const el = {
+  date: document.getElementById("date"),
+  plate: document.getElementById("plate"),
+  income: document.getElementById("income"),
+  expense: document.getElementById("expense"),
+  note: document.getElementById("note"),
+  service: document.getElementById("service"),
+  qPlate: document.getElementById("qPlate"),
+  tblBody: document.querySelector("#table tbody"),
+  summary: document.getElementById("summary"),
+  chart: document.getElementById("chart"),
+  btnAdd: document.getElementById("btnAdd"),
+  btnFilter: document.getElementById("btnFilter"),
+  btnClear: document.getElementById("btnClear"),
+  btnCsv: document.getElementById("btnCsv"),
+  tblSvcBody: document.querySelector("#tblSvc tbody"),
+  btnAllIcs: document.getElementById("btnAllIcs"),
+};
+
+function addRecord(){
+  const r = {
+    id: Date.now(),
+    date: el.date.value,
+    plate: (el.plate.value||"").trim(),
+    income: +el.income.value || 0,
+    expense: +el.expense.value || 0,
+    note: (el.note.value||"").trim(),
+    service: el.service.value || ""
+  };
+  if(!r.date || !r.plate){ alert("Tarih ve plaka zorunlu"); return; }
+
+  state.data.push(r);
+  if(r.plate && !state.lists.plates.includes(r.plate)) state.lists.plates.push(r.plate);
+  save(); saveLists(); fillLists();
+
+  // formu temizle
+  el.date.value = el.plate.value = el.income.value = el.expense.value = el.note.value = el.service.value = "";
+  openTab("list"); // ekledikten sonra listeye geç
+  renderTable();
+  drawChart();
+}
+document.getElementById("btnAdd").addEventListener("click", addRecord);
+
+/* ====== Liste / filtre / csv ====== */
+function renderTable(){
+  el.tblBody.innerHTML = "";
+  let list = [...state.data];
+  const qp = (el.qPlate.value||"").toLowerCase();
+  if(qp) list = list.filter(x => (x.plate||"").toLowerCase().includes(qp));
+  list.sort((a,b) => b.date.localeCompare(a.date));
+
+  let sumIn=0, sumEx=0;
+  list.forEach(r=>{
+    const k=(r.income||0)-(r.expense||0);
+    sumIn+=(r.income||0); sumEx+=(r.expense||0);
+    const tr=document.createElement("tr");
+    tr.className = k>=0 ? "profit" : "loss";
+    tr.innerHTML = `
+      <td>${r.date||""}</td>
+      <td>${r.plate||""}</td>
+      <td>${money(r.income)} ₺</td>
+      <td>${money(r.expense)} ₺</td>
+      <td>${money(k)} ₺</td>
+      <td>${(r.note||"").replace(/</g,"&lt;")}</td>
+      <td><button class="danger" data-id="${r.id}">Sil</button></td>`;
+    tr.querySelector("button").addEventListener("click",(e)=>{
+      const id = e.currentTarget.getAttribute("data-id");
+      if(confirm("Bu kayıt silinsin mi?")){
+        state.data = state.data.filter(x => String(x.id)!==String(id));
+        save(); renderTable(); drawChart(); renderSvc();
+      }
+    });
+    el.tblBody.appendChild(tr);
+  });
+
+  el.summary.innerHTML = `Toplam Gelir: <b>${money(sumIn)} ₺</b> — Gider: <b>${money(sumEx)} ₺</b> — Kâr: <b>${money(sumIn-sumEx)} ₺</b> — Kayıt: <b>${list.length}</b>`;
+}
+function exportCsv(){
+  const rows = ["Tarih,Plaka,Gelir,Gider,Kâr,Not"];
+  state.data.forEach(r=>{
+    const k=(r.income||0)-(r.expense||0);
+    rows.push(`${r.date||""},${r.plate||""},${r.income||0},${r.expense||0},${k},"${(r.note||"").replace(/"/g,'""')}"`);
+  });
+  const blob = new Blob([rows.join("\n")], {type:"text/csv"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "sam_kayitlar.csv"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),500);
+}
+el.btnFilter.addEventListener("click", renderTable);
+el.btnClear.addEventListener("click", ()=>{ el.qPlate.value=""; renderTable(); });
+el.btnCsv.addEventListener("click", exportCsv);
+
+/* ====== Grafik ====== */
+function drawChart(){
+  const months={};
+  state.data.forEach(r=>{
+    if(!r.date) return;
+    const [y,m] = r.date.split("-");
+    const key = `${y}-${m}`;
+    if(!months[key]) months[key] = {gelir:0,gider:0};
+    months[key].gelir += (+r.income||0);
+    months[key].gider += (+r.expense||0);
+  });
+  const labels = Object.keys(months).sort();
+  const gelir = labels.map(k=>months[k].gelir);
+  const gider = labels.map(k=>months[k].gider);
+
+  if(state.chart){ state.chart.destroy(); state.chart=null; }
+  state.chart = new Chart(el.chart, {
+    type:"bar",
+    data:{ labels, datasets:[
+      {label:"Gelir", data:gelir, backgroundColor:"rgba(50,215,75,.6)"},
+      {label:"Gider", data:gider, backgroundColor:"rgba(255,59,48,.6)"},
+    ]},
+    options:{plugins:{legend:{position:"bottom"}}, scales:{y:{beginAtZero:true}}}
+  });
+}
+
+/* ====== Bakım / ICS ====== */
+function toICSDate(d){ return d.replaceAll("-",""); }
+function buildICS(items){
+  const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//SAM//TRUCK//TR"];
+  items.forEach(x=>{
+    const dt=toICSDate(x.service);
+    lines.push("BEGIN:VEVENT");
+    lines.push("UID:"+x.id+"@sam");
+    lines.push("DTSTAMP:"+dt+"T090000Z");
+    lines.push("DTSTART;VALUE=DATE:"+dt);
+    lines.push("SUMMARY:"+(x.plate||"Tır")+" bakım/muayene");
+    lines.push("DESCRIPTION:"+(x.note?x.note.replace(/\n/g," "):""));
+    lines.push("END:VEVENT");
+  });
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+function download(name,content,type){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),500);
+}
+function renderSvc(){
+  el.tblSvcBody.innerHTML="";
+  const today=new Date();
+  const soon=new Date(); soon.setDate(today.getDate()+30);
+  const list = state.data.filter(x=>x.service).sort((a,b)=> a.service.localeCompare(b.service));
+  list.forEach(x=>{
+    const d=new Date(x.service);
+    const near=(d>=today && d<=soon) ? ' <span class="badge">yaklaşıyor</span>' : '';
+    const tr=document.createElement("tr");
+    tr.innerHTML = `<td>${x.service}${near}</td><td>${x.plate||""}</td><td>${x.note?"Bakım":"Muayene"}</td>
+      <td><button class="ghost" data-id="${x.id}">.ics</button></td>`;
+    tr.querySelector("button").addEventListener("click", ()=>{
+      download(`sam_${x.plate||"bakim"}.ics`, buildICS([x]), "text/calendar");
+    });
+    el.tblSvcBody.appendChild(tr);
+  });
+}
+el.btnAllIcs.addEventListener("click", ()=>{
+  const items = state.data.filter(x=>x.service);
+  if(!items.length){ alert("Bakım/muayene tarihi olan kayıt yok."); return; }
+  download("sam_bakimlar.ics", buildICS(items), "text/calendar");
+});
+
+/* ====== İlk yükleme ====== */
+renderTable(); // list
+drawChart();   // reports grafiği hazır olsun
+renderSvc();   // service listesi
+// PWA SW kaydı (varsa)
+if('serviceWorker' in navigator){ window.addEventListener('load', ()=> navigator.serviceWorker.register('./sw.js')); }
 </script>
+</body>
+</html>
