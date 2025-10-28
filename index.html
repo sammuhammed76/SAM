@@ -87,92 +87,182 @@ body.dark .total{background:#222}
 </div>
 
 <script>
-const LS="samDataV4"; let data=JSON.parse(localStorage.getItem(LS)||"[]");
-const LSLIST="samLists"; let lists=JSON.parse(localStorage.getItem(LSLIST)||"{plates:[],clients:[]}");
-function save(){localStorage.setItem(LS,JSON.stringify(data));}
-function saveLists(){localStorage.setItem(LSLIST,JSON.stringify(lists));}
-function money(n){return (n||0).toLocaleString("tr-TR");}
+/* ====== Yardımcılar ====== */
+const LS = "samDataV4";
+const LSLIST = "samLists";
+function money(n){ return (n||0).toLocaleString("tr-TR"); }
+function saveData(){ localStorage.setItem(LS, JSON.stringify(state.data)); }
+function saveLists(){ localStorage.setItem(LSLIST, JSON.stringify(state.lists)); }
 
-function add(){
- const r={id:Date.now(),date:date.value,plate:plate.value.trim(),client:client.value.trim(),
-          income:+income.value||0,expense:+expense.value||0,note:note.value.trim()};
- if(!r.date||!r.plate){alert("Tarih ve plaka zorunlu");return;}
- data.push(r);
- if(r.plate&&!lists.plates.includes(r.plate)) lists.plates.push(r.plate);
- if(r.client&&!lists.clients.includes(r.client)) lists.clients.push(r.client);
- save();saveLists();render();fillLists();
- date.value=plate.value=client.value=income.value=expense.value=note.value="";
-}
+/* ====== DOM Hazır olunca ====== */
+document.addEventListener("DOMContentLoaded", () => {
+  // Tüm elemanları elle seç (Safari global yapmaz)
+  const el = {
+    date: document.getElementById("date"),
+    plate: document.getElementById("plate"),
+    client: document.getElementById("client"),
+    income: document.getElementById("income"),
+    expense: document.getElementById("expense"),
+    note: document.getElementById("note"),
+    qPlate: document.getElementById("qPlate"),
+    qClient: document.getElementById("qClient"),
+    plateList: document.getElementById("plateList"),
+    clientList: document.getElementById("clientList"),
+    tblBody: document.querySelector("#table tbody"),
+    summary: document.getElementById("summary"),
+    chart: document.getElementById("chart"),
+    // butonlar
+    btnAdd: document.getElementById("btnAdd"),
+    btnFilter: document.getElementById("btnFilter"),
+    btnClear: document.getElementById("btnClear"),
+    btnCsv: document.getElementById("btnCsv"),
+    btnDark: document.getElementById("btnDark"),
+  };
 
-function del(id){if(confirm("Silinsin mi?")){data=data.filter(x=>x.id!=id);save();render();}}
-function fillLists(){
- plateList.innerHTML=lists.plates.map(p=>`<option value="${p}">`).join("");
- clientList.innerHTML=lists.clients.map(c=>`<option value="${c}">`).join("");
-}
+  // Uygulama durumu
+  window.state = {
+    data: JSON.parse(localStorage.getItem(LS) || "[]"),
+    lists: JSON.parse(localStorage.getItem(LSLIST) || '{"plates":[],"clients":[]}'),
+    chart: null
+  };
 
-function render(){
- const tb=document.querySelector("#table tbody"); tb.innerHTML="";
- let sumIn=0,sumEx=0;
- let list=[...data];
- const qp=qPlate.value.toLowerCase(),qc=qClient.value.toLowerCase();
- if(qp) list=list.filter(x=>x.plate.toLowerCase().includes(qp));
- if(qc) list=list.filter(x=>x.client.toLowerCase().includes(qc));
- list.sort((a,b)=>b.date.localeCompare(a.date));
- list.forEach(r=>{
-   const k=r.income-r.expense; sumIn+=r.income; sumEx+=r.expense;
-   const tr=document.createElement("tr");
-   tr.className=k>=0?"profit":"loss";
-   tr.innerHTML=`<td>${r.date}</td><td>${r.plate}</td><td>${r.client}</td>
-   <td>${money(r.income)} ₺</td><td>${money(r.expense)} ₺</td>
-   <td>${money(k)} ₺</td><td>${r.note}</td>
-   <td><button class="danger" onclick="del(${r.id})">Sil</button></td>`;
-   tb.appendChild(tr);
- });
- summary.innerHTML=`Toplam Gelir: <b>${money(sumIn)} ₺</b> — Gider: <b>${money(sumEx)} ₺</b> — Kâr: <b>${money(sumIn-sumEx)} ₺</b>`;
- drawChart();
-}
+  /* ---- Otomatik tamamlama listelerini doldur ---- */
+  function fillLists(){
+    el.plateList.innerHTML = state.lists.plates.map(p=>`<option value="${p}">`).join("");
+    el.clientList.innerHTML = state.lists.clients.map(c=>`<option value="${c}">`).join("");
+  }
 
-function drawChart(){
- const ctx=document.getElementById("chart");
- const months={};
- data.forEach(r=>{
-   const [y,m]=r.date.split("-"); const key=y+"-"+m;
-   if(!months[key]) months[key]={gelir:0,gider:0};
-   months[key].gelir+=r.income; months[key].gider+=r.expense;
- });
- const labels=Object.keys(months).sort();
- const gelir=labels.map(k=>months[k].gelir);
- const gider=labels.map(k=>months[k].gider);
- if(window.myChart) window.myChart.destroy();
- window.myChart=new Chart(ctx,{
-   type:"bar",
-   data:{labels,datasets:[
-     {label:"Gelir",data:gelir,backgroundColor:"rgba(50,215,75,0.6)"},
-     {label:"Gider",data:gider,backgroundColor:"rgba(255,59,48,0.6)"}
-   ]},
-   options:{plugins:{legend:{position:"bottom"}},scales:{y:{beginAtZero:true}}}
- });
-}
+  /* ---- Tablo ve özet ---- */
+  function render(){
+    el.tblBody.innerHTML = "";
+    let sumIn = 0, sumEx = 0;
+    let list = [...state.data];
 
-btnAdd.onclick=add;
-btnFilter.onclick=render;
-btnClear.onclick=()=>{qPlate.value=qClient.value="";render();}
-btnCsv.onclick=()=>{
- let rows=["Tarih,Plaka,Müşteri,Gelir,Gider,Kâr,Not"];
- data.forEach(r=>rows.push(`${r.date},${r.plate},${r.client},${r.income},${r.expense},${r.income-r.expense},"${r.note}"`));
- const blob=new Blob([rows.join("\n")],{type:"text/csv"});
- const a=document.createElement("a"); a.href=URL.createObjectURL(blob);a.download="sam_kayitlar.csv";a.click();
-};
+    const qp = (el.qPlate.value||"").toLowerCase();
+    const qc = (el.qClient.value||"").toLowerCase();
+    if(qp) list = list.filter(x => (x.plate||"").toLowerCase().includes(qp));
+    if(qc) list = list.filter(x => (x.client||"").toLowerCase().includes(qc));
 
-btnDark.onclick=()=>{
- document.body.classList.toggle("dark");
- localStorage.setItem("samTheme",document.body.classList.contains("dark")?"dark":"light");
-};
+    list.sort((a,b)=> b.date.localeCompare(a.date));
 
-if(localStorage.getItem("samTheme")==="dark") document.body.classList.add("dark");
-fillLists();render();
+    list.forEach(r=>{
+      const k = (r.income||0) - (r.expense||0);
+      sumIn += (r.income||0); sumEx += (r.expense||0);
+      const tr = document.createElement("tr");
+      tr.className = k>=0 ? "profit" : "loss";
+      tr.innerHTML = `
+        <td>${r.date||""}</td>
+        <td>${r.plate||""}</td>
+        <td>${r.client||""}</td>
+        <td>${money(r.income)} ₺</td>
+        <td>${money(r.expense)} ₺</td>
+        <td>${money(k)} ₺</td>
+        <td>${(r.note||"").replace(/</g,"&lt;")}</td>
+        <td><button class="danger" data-id="${r.id}">Sil</button></td>
+      `;
+      // sil
+      tr.querySelector("button").addEventListener("click", (e)=>{
+        const id = e.currentTarget.getAttribute("data-id");
+        if(confirm("Silinsin mi?")){
+          state.data = state.data.filter(x => String(x.id)!==String(id));
+          saveData(); render(); drawChart();
+        }
+      });
+      el.tblBody.appendChild(tr);
+    });
+
+    el.summary.innerHTML = `Toplam Gelir: <b>${money(sumIn)} ₺</b> — Gider: <b>${money(sumEx)} ₺</b> — Kâr: <b>${money(sumIn-sumEx)} ₺</b>`;
+    drawChart();
+  }
+
+  /* ---- Grafik ---- */
+  function drawChart(){
+    const months = {};
+    state.data.forEach(r=>{
+      if(!r.date) return;
+      const [y,m] = r.date.split("-");
+      const key = `${y}-${m}`;
+      if(!months[key]) months[key] = {gelir:0, gider:0};
+      months[key].gelir += (+r.income||0);
+      months[key].gider += (+r.expense||0);
+    });
+    const labels = Object.keys(months).sort();
+    const gelir = labels.map(k=>months[k].gelir);
+    const gider = labels.map(k=>months[k].gider);
+
+    if(state.chart) { state.chart.destroy(); state.chart = null; }
+    state.chart = new Chart(el.chart, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          { label:"Gelir", data: gelir, backgroundColor:"rgba(50,215,75,0.6)" },
+          { label:"Gider", data: gider, backgroundColor:"rgba(255,59,48,0.6)" }
+        ]
+      },
+      options: { plugins:{ legend:{ position:"bottom" } }, scales:{ y:{ beginAtZero:true } } }
+    });
+  }
+
+  /* ---- Kayıt ekle ---- */
+  function add(){
+    const r = {
+      id: Date.now(),
+      date: el.date.value,
+      plate: (el.plate.value||"").trim(),
+      client: (el.client.value||"").trim(),
+      income: +el.income.value || 0,
+      expense: +el.expense.value || 0,
+      note: (el.note.value||"").trim()
+    };
+    if(!r.date || !r.plate){ alert("Tarih ve plaka zorunlu"); return; }
+
+    state.data.push(r);
+    if(r.plate && !state.lists.plates.includes(r.plate)) state.lists.plates.push(r.plate);
+    if(r.client && !state.lists.clients.includes(r.client)) state.lists.clients.push(r.client);
+
+    saveData(); saveLists(); fillLists(); render();
+
+    // formu temizle
+    el.date.value = el.plate.value = el.client.value = el.income.value = el.expense.value = el.note.value = "";
+  }
+
+  /* ---- CSV dışa aktar ---- */
+  function exportCsv(){
+    const rows = ["Tarih,Plaka,Müşteri,Gelir,Gider,Kâr,Not"];
+    state.data.forEach(r=>{
+      const k = (r.income||0)-(r.expense||0);
+      rows.push(`${r.date||""},${r.plate||""},${r.client||""},${r.income||0},${r.expense||0},${k},"${(r.note||"").replace(/"/g,'""')}"`);
+    });
+    const blob = new Blob([rows.join("\n")], {type:"text/csv"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "sam_kayitlar.csv";
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 500);
+  }
+
+  /* ---- Tema ---- */
+  function applyTheme(){
+    if(localStorage.getItem("samTheme")==="dark") document.body.classList.add("dark");
+    else document.body.classList.remove("dark");
+  }
+  function toggleDark(){
+    const nowDark = !document.body.classList.contains("dark");
+    document.body.classList.toggle("dark", nowDark);
+    localStorage.setItem("samTheme", nowDark ? "dark" : "light");
+  }
+
+  /* ---- Olay bağla ---- */
+  el.btnAdd.addEventListener("click", add);
+  el.btnFilter.addEventListener("click", render);
+  el.btnClear.addEventListener("click", ()=>{ el.qPlate.value=""; el.qClient.value=""; render(); });
+  el.btnCsv.addEventListener("click", exportCsv);
+  el.btnDark.addEventListener("click", toggleDark);
+
+  /* ---- İlk yükleme ---- */
+  applyTheme();
+  fillLists();
+  render();
+});
 </script>
-
-</main>
-</body>
-</html>
